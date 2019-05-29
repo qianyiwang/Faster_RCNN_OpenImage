@@ -17,9 +17,9 @@ images_boxable = pd.read_csv(os.path.join(base_path, images_boxable_fname))
 # print (images_boxable.head(5))
 annotations_bbox = pd.read_csv(os.path.join(base_path, annotations_bbox_fname))
 # print (annotations_bbox.head(5))
-class_descriptions = pd.read_csv(os.path.join(base_path, class_descriptions_fname))
-print(class_descriptions.head(5))
-
+class_descriptions = pd.read_csv(os.path.join(base_path, class_descriptions_fname),names=["name", "class"])
+# print(class_descriptions.head(5))
+# exit()
 
 def readOneImg():
 	image_name = images_boxable['image_name'][0]

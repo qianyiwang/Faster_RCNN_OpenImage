@@ -7,6 +7,8 @@ import cv2
 from PIL import Image
 import requests
 from io import BytesIO
+import random
+from tqdm import tqdm
 
 base_path = 'data'
 images_boxable_fname = 'train-images-boxable.csv'
@@ -71,9 +73,31 @@ def plotBbx(img, img_id):
 	plt.imshow(img_bbox)
 	plt.show()
 
-	io.imsave('sample.jpg', img_bbox)
+	# io.imsave('sample.jpg', img_bbox)
+
+def shuffle_ids_perClass(class_name, n=1000):
+	pd = class_descriptions[class_descriptions['class']==class_name]
+	label_name = pd['name'].values[0]
+	bbox = annotations_bbox[annotations_bbox['LabelName']==label_name]
+	print('There are {} {} in the dataset'.format(len(bbox),class_name))
+
+	img_ids = bbox['ImageID']
+	img_ids = np.unique(img_ids) # one image can contain multiple objects
+
+	# Shuffle the ids and pick the first 1000 ids
+	copy_img_ids = img_ids.copy()
+	random.seed(1)
+	random.shuffle(copy_img_ids)
+	shuffled_img_ids = copy_img_ids[:n]
+	return shuffled_img_ids
+
+def download_images(ids):
+	for i in tqdm(ids):
+		pass
+
+
 
 
 if __name__ == '__main__':
-	img, image_id=readOneImg()
-	plotBbx(img, image_id)
+	ids = shuffle_ids_perClass('Person')
+	print(ids)

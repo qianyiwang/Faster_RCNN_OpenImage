@@ -10,7 +10,7 @@ from io import BytesIO
 import random
 from tqdm import tqdm
 
-base_path = 'data'
+base_path = 'data/raw'
 images_boxable_fname = 'train-images-boxable.csv'
 annotations_bbox_fname = 'train-annotations-bbox.csv'
 class_descriptions_fname = 'class-descriptions-boxable.csv'
@@ -21,7 +21,6 @@ annotations_bbox = pd.read_csv(os.path.join(base_path, annotations_bbox_fname))
 # print (annotations_bbox.head(5))
 class_descriptions = pd.read_csv(os.path.join(base_path, class_descriptions_fname),names=["name", "class"])
 # print(class_descriptions.head(5))
-# exit()
 
 def readOneImg():
 	image_name = images_boxable['image_name'][0]
@@ -91,13 +90,54 @@ def shuffle_ids_perClass(class_name, n=1000):
 	shuffled_img_ids = copy_img_ids[:n]
 	return shuffled_img_ids
 
-def download_images(ids):
-	for i in tqdm(ids):
-		pass
+def download_images(image_ids, class_name):
+	for img_id in tqdm(image_ids):
+		img_name = img_id+'.jpg'
+		# print('processing {}'.format(img_name))
+		img_url = images_boxable[images_boxable['image_name']==img_name]['image_url'].values[0]
+		response = requests.get(img_url)
+		img = Image.open(BytesIO(response.content))
+		# img = np.array(img)
+		# try:
+		# 	io.imsave('data/images/'+class_name+'/'+img_name, img)
+		# except Exception as e:
+		# 	print(e, img_url)
+		# 	img = img.convert('RGB')
+		# 	io.imsave('data/images/'+class_name+'/'+img_name, img)
+		img.save('data/images/'+class_name+'/'+img_name)
 
+def create_train_csv():
+	
+	train_csv_df = pd.DataFrame(columns=['ID','FileName','ClassName','XMin','XMax','YMin','YMax'])
+	base_path = 'data/images'
+	for file_name in tqdm(os.listdir(base_path)):
+		if not file_name.startswith('.'):
+			for img_name in os.listdir(os.path.join(base_path,file_name)):
+				if not img_name.startswith('.'):
+					# print('processing {}'.format(img_name))
+					img_id = img_name.strip('.jpg')
+					rows = annotations_bbox[annotations_bbox['ImageID']==img_id]
+					for _, row in rows.iterrows():
+						xmin = row['XMin']
+						xmax = row['XMax']
+						ymin = row['YMin']
+						ymax = row['YMax']
+						label_name = row['LabelName']
+						class_series = class_descriptions[class_descriptions['name']==label_name]
+						class_name = class_series['class'].values[0]
+						train_csv_df = train_csv_df.append({'ID':img_id,'FileName':img_name,'ClassName':class_name,'XMin':xmin,'XMax':xmax,'YMin':ymin,'YMax':ymax},ignore_index=True)
 
+	train_csv_df.to_csv('data/train_csv.csv',index=False)
+
+		
 
 
 if __name__ == '__main__':
-	ids = shuffle_ids_perClass('Person')
-	print(ids)
+	# ids = shuffle_ids_perClass('Person')
+	# download_images(ids,'Person')
+	# ids = shuffle_ids_perClass('Mobile phone')
+	# download_images(ids,'Mobile phone')
+	# ids = shuffle_ids_perClass('Car')
+	# download_images(ids,'Car')
+	create_train_csv()
+	
